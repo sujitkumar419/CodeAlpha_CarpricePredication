@@ -1,16 +1,11 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
 # Load dataset (make sure CarPrice.csv is in the same folder)
 df = pd.read_csv("CarPrice.csv")
-
-print("Dataset Shape:", df.shape)
-df.head()
 
 # Check missing values
 print("Missing values:\n", df.isnull().sum())
@@ -19,42 +14,31 @@ print("Missing values:\n", df.isnull().sum())
 num_cols = df.select_dtypes(include=np.number).columns
 cat_cols = df.select_dtypes(include="object").columns
 
-  # Convert categorical features into numeric using one-hot encoding
+df[num_cols] = df[num_cols].fillna(df[num_cols].median())
+df[cat_cols] = df[cat_cols].fillna(df[cat_cols].mode().iloc[0])
+
+# Encode categorical features
 df_encoded = pd.get_dummies(df, drop_first=True)
 
+# Features and target
 X = df_encoded.drop("Price", axis=1)
 y = df_encoded["Price"]
 
+# Train-Test Split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
+# Train Random Forest model
 model = RandomForestRegressor(n_estimators=300, random_state=42)
 model.fit(X_train, y_train)
+
+# Predictions
 y_pred = model.predict(X_test)
 
-
-  r2 = r2_score(y_test, y_pred)
+# Evaluation
+r2 = r2_score(y_test, y_pred)
 rmse = mean_squared_error(y_test, y_pred, squared=False)
 
 print(f"✅ R² Score: {r2:.3f}")
 print(f"✅ RMSE: {rmse:.2f}")
-
-importances = pd.Series(model.feature_importances_, index=X.columns)
-top_feats = importances.sort_values(ascending=False).head(15)
-
-plt.figure(figsize=(10,6))
-sns.barplot(x=top_feats.values, y=top_feats.index)
-plt.title("Top Feature Importance in Car Price Prediction")
-plt.xlabel("Importance")
-plt.ylabel("Feature")
-plt.show()
-
- # 🎯 Conclusion
-The Random Forest model predicts car prices with good accuracy.  
-Feature importance analysis shows which factors (year, mileage, fuel type, etc.) most influence car prices. 
-  
-  
-
-df[num_cols] = df[num_cols].fillna(df[num_cols].median())
-df[cat_cols] = df[cat_cols].fillna(df[cat_cols].mode().iloc[0])  
